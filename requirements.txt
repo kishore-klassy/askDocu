@@ -7,6 +7,6 @@ accelerate>=0.20.3
 huggingface-hub>=0.15.1
 python-dotenv>=1.0.0
 tqdm>=4.65.0
-streamlit==1.24.1
+streamlit
 sentence-transformers>=2.2.2
-pillow>=10.0.0
+pillow
