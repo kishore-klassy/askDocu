@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 from collections import deque
 
 
-def crawl_help_site(base_url, max_pages=40):
+def crawl_help_site(base_url, max_pages=200):
     visited = set()
     queue = deque([base_url])
     documents = []
