@@ -1,6 +1,6 @@
 requests>=2.28.0
 beautifulsoup4>=4.12.2
-faiss-cpu>=1.7.4
+faiss-cpu==1.8.0  # (or omit if not working on Python 3.13)
 numpy>=1.24.0
 transformers>=4.29.2
 accelerate>=0.20.3
@@ -8,5 +8,4 @@ huggingface-hub>=0.15.1
 python-dotenv>=1.0.0
 tqdm>=4.65.0
 streamlit==1.24.1
-sentence-transformers
-python-3.10
+sentence-transformers>=2.2.2
