@@ -14,14 +14,20 @@ if "qa_engine" not in st.session_state:
     st.session_state.qa_engine = None
 
 def initialize_agent():
-    with st.spinner("Crawling and indexing the help site..."):
-        docs = crawl_help_site(st.session_state["help_url"])
-        if not docs:
-            st.error("No documentation found.")
-            return
-        vector_store = create_or_load_vector_store(docs)
-        st.session_state.qa_engine = QAEngine(vector_store)
-        st.success("Agent is ready! Start chatting.")
+    try:
+        with st.spinner("Crawling and indexing the help site..."):
+            docs = crawl_help_site(st.session_state["help_url"])
+            if not docs:
+                st.error("No documentation found. Please check the URL and try again.")
+                return
+            vector_store = create_or_load_vector_store(docs)
+            st.session_state.qa_engine = QAEngine(vector_store)
+            st.success(f"Agent is ready! Indexed {len(docs)} pages. Start chatting.")
+    except ValueError as e:
+        st.error(f"Configuration error: {str(e)}")
+    except Exception as e:
+        st.error(f"Failed to initialize agent: {str(e)}")
+        st.session_state.qa_engine = None
 
 # Sidebar setup
 st.sidebar.title("🧠 Help Site Configuration")
@@ -30,9 +36,13 @@ st.sidebar.markdown("Enter a base URL to crawl and ask questions.")
 help_url_input = st.sidebar.text_input("Help Website URL", placeholder="https://example.com/help")
 
 if st.sidebar.button("🔍 Start Crawling"):
-    if help_url_input:
-        st.session_state["help_url"] = help_url_input
-        initialize_agent()
+    if help_url_input and help_url_input.strip():
+        # Basic URL validation
+        if not (help_url_input.startswith('http://') or help_url_input.startswith('https://')):
+            st.sidebar.error("Please enter a valid URL starting with http:// or https://")
+        else:
+            st.session_state["help_url"] = help_url_input.strip()
+            initialize_agent()
     else:
         st.sidebar.error("Please enter a valid URL.")
 
@@ -43,19 +53,24 @@ st.markdown("Ask questions based on the help documentation crawled from the prov
 if st.session_state.qa_engine:
     user_input = st.text_input("💬 Ask your question:", placeholder="Type your question here...", key="user_input")
     if st.button("Send"):
-        if user_input:
+        if user_input and user_input.strip():
             # Display user message
-            st.session_state.messages.append({"role": "user", "text": user_input})
+            st.session_state.messages.append({"role": "user", "text": user_input.strip()})
 
-            # Get the answer
-            answer, sources = st.session_state.qa_engine.answer_question(user_input)
+            try:
+                # Get the answer
+                answer, sources = st.session_state.qa_engine.answer_question(user_input.strip())
 
-            source_str = ""
-            if sources:
-                source_str = "\n\n📚 **Sources:**\n" + "\n".join(f"- [{src}]({src})" for src in sources)
+                source_str = ""
+                if sources:
+                    source_str = "\n\n📚 **Sources:**\n" + "\n".join(f"- [{src}]({src})" for src in sources)
 
-            full_response = answer + source_str
-            st.session_state.messages.append({"role": "bot", "text": full_response})
+                full_response = answer + source_str
+                st.session_state.messages.append({"role": "bot", "text": full_response})
+            except Exception as e:
+                error_msg = f"Error processing your question: {str(e)}"
+                st.session_state.messages.append({"role": "bot", "text": error_msg})
+                st.error(error_msg)
         else:
             st.warning("Please type a question.")
 

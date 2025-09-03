@@ -6,6 +6,15 @@ from collections import deque
 
 
 def crawl_help_site(base_url, max_pages=200):
+    # Validate base URL
+    try:
+        parsed = urlparse(base_url)
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError(f"Invalid URL format: {base_url}")
+    except Exception as e:
+        print(f"[ERROR] Invalid base URL: {e}")
+        return []
+    
     visited = set()
     queue = deque([base_url])
     documents = []
@@ -17,6 +26,7 @@ def crawl_help_site(base_url, max_pages=200):
 
         try:
             response = requests.get(url, timeout=10)
+            response.raise_for_status()  # Raise an exception for bad status codes
             if 'text/html' not in response.headers.get('Content-Type', ''):
                 continue
 
@@ -28,7 +38,7 @@ def crawl_help_site(base_url, max_pages=200):
 
             for link in soup.find_all('a', href=True):
                 full_url = urljoin(url, link['href'])
-                if same_domain(base_url, full_url):
+                if same_domain(base_url, full_url) and full_url not in visited:
                     queue.append(full_url)
 
             visited.add(url)
